@@ -1,15 +1,17 @@
+
 #include "DK_C8T6.h"
+#include "SD12.h"
 
 int main(void)
 {
-    Sys_Init();    // 系统初始化
-    Buzzer_Init(); // 初始化蜂鸣器
+    DHT11_Data_TypeDef DHT11_Data;
+    int keyValue = 0; // 初始化按键值为0，用于存储上一次的按键值
 
-    int keyValue = 0;                // 初始化按键值为0，用于存储上一次的按键值
+    Sys_Init();   // 系统初始化
+    SD12_Init();  // 初始化SD12紫外线传感器
+    DHT11_Init(); // 初始化DHT11传感器
+
     OLED_ShowNum(1, 1, keyValue, 2); // 初始显示0
-    OLED_ShowNum(2, 1, keyValue, 16);
-    OLED_ShowNum(3, 1, keyValue, 16);
-    OLED_ShowNum(4, 1, keyValue, 16);
 
     while (1) {
         int currentKeyValue = Key_GetNum(); // 获取当前按键值
@@ -20,8 +22,10 @@ int main(void)
 
             if (keyValue == 1) {        // 如果按键值为1
                 Buzzer_ON();            // 打开蜂鸣器
+                Fan_ON();               //
             } else if (keyValue == 2) { // 如果按键值为2
                 Buzzer_OFF();           // 关闭蜂鸣器
+                Fan_OFF();              //
             } else if (keyValue == 9) { // 如果按键值为9
                 LED_Sys_Turn();
                 Motor_SetSpeed(20); // 设置电机速度为20
@@ -41,5 +45,29 @@ int main(void)
             }
             // 如果currentKeyValue为0，则不更新OLED显示，保持上一次的keyValue
         }
+        /*调用DHT11_Read_TempAndHumidity读取温湿度，若成功则输出该信息*/
+        if (DHT11_Read_TempAndHumidity(&DHT11_Data) == SUCCESS) {
+            OLED_ShowString(1, 1, "DHT11 Success!");
+            OLED_ShowNum(2, 1, DHT11_Data.humi_int, 2);
+            OLED_ShowString(2, 3, ".");
+            OLED_ShowNum(2, 4, DHT11_Data.humi_deci, 1);
+            OLED_ShowString(2, 5, "%RH");
+            OLED_ShowNum(3, 1, DHT11_Data.temp_int, 2);
+            OLED_ShowString(3, 3, ".");
+            OLED_ShowNum(3, 4, DHT11_Data.temp_deci, 1);
+            OLED_ShowString(3, 5, "C");
+        } else {
+            OLED_ShowString(1, 1, "DHT11 ERROR!");
+        }
+
+        // 读取SD12紫外线传感器数据
+        uint16_t uvValue = SD12_GetADCValue(10); // 采集10次取平均值
+        uint8_t uvLevel  = SD12_GetIntensity(uvValue);
+
+        // 在OLED上显示紫外线强度等级
+        OLED_ShowString(4, 1, "UV Level:");
+        OLED_ShowNum(4, 10, uvLevel, 2);
+
+        Delay_ms(50); // 延时50ms
     }
 }
