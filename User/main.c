@@ -1,15 +1,14 @@
 
 #include "DK_C8T6.h"
-#include "SD12.h"
-#include "BT.h"
-#include "DHT11.h"
 
 int main(void)
 {
     DHT11_Data_TypeDef DHT11_Data;
-    int keyValue   = 0; // 初始化按键值为0，用于存储上一次的按键值
-    uint16_t count = 0;
-    uint8_t uvLevel;
+    int keyValue    = 0;    // 初始化按键值为0，用于存储上一次的按键值
+    uint8_t count   = 0;    /// 计数传感器的计数值
+    uint8_t uvLevel = 0;    // 紫外线强度等级
+    float humi      = 0.0f; // 湿度值
+    float temp      = 0.0f; // 温度值
 
     Sys_Init(); // 系统初始化
 
@@ -64,7 +63,7 @@ int main(void)
 
         // 读取SD12紫外线传感器数据
         uint16_t uvValue = SD12_GetADCValue(10); // 采集10次取平均值
-        uint8_t uvLevel  = SD12_GetIntensity(uvValue);
+        uvLevel          = SD12_GetIntensity(uvValue);
 
         // 在OLED上显示紫外线强度等级
         OLED_ShowString(4, 1, "UV Level:");
@@ -73,9 +72,9 @@ int main(void)
         count = CountSensor_Get(); // 获取计数传感器的计数值
         OLED_ShowString(3, 7, "Count:");
         OLED_ShowNum(3, 13, count, 4);
-
-        BT_SendDataPacket(count, uvLevel, DHT11_Data);
-
-        Delay_ms(50); // 延时50ms
+        humi = (float)DHT11_Data.humi_int + (float)DHT11_Data.humi_deci / 10.0;
+        temp = (float)DHT11_Data.temp_int + (float)DHT11_Data.temp_deci / 10.0;
+        BT_SendDataPacket(count, uvLevel, humi, temp); // 发送数据包
+        Delay_ms(10);                                  // 延时50ms
     }
 }

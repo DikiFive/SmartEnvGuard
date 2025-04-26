@@ -1,7 +1,7 @@
 #include "stm32f10x.h" // Device header
 #include "dk_C8T6.h"
 
-uint16_t CountSensor_Count; // 全局变量，用于计数
+uint8_t CountSensor_Count;
 
 /**
  * 函    数：计数传感器初始化
@@ -53,7 +53,7 @@ void CountSensor_Init(void)
  * 参    数：无
  * 返 回 值：计数值，范围：0~65535
  */
-uint16_t CountSensor_Get(void)
+uint8_t CountSensor_Get(void)
 {
     return CountSensor_Count;
 }
