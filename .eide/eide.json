@@ -1,8 +1,10 @@
 {
-  "name": "Project",
+  "name": "pig",
   "type": "ARM",
   "dependenceList": [],
-  "srcDirs": [],
+  "srcDirs": [
+    "DK"
+  ],
   "virtualFolder": {
     "name": "<virtual_root>",
     "files": [],
@@ -196,8 +198,8 @@
     ]
   },
   "outDir": "build",
-  "deviceName": null,
-  "packDir": null,
+  "deviceName": "STM32F103C8",
+  "packDir": ".pack/Keil/STM32F1xx_DFP.2.2.0",
   "miscInfo": {
     "uid": "7eb1fcc30c30a912568f2929156650cc"
   },
@@ -318,31 +320,46 @@
         },
         "options": "null"
       },
-      "uploader": "JLink",
+      "uploader": "STLink",
       "uploadConfig": {
         "bin": "",
-        "baseAddr": "",
-        "cpuInfo": {
-          "vendor": "null",
-          "cpuName": "null"
-        },
-        "proType": 1,
-        "speed": 8000,
+        "proType": "SWD",
+        "resetMode": "default",
+        "runAfterProgram": true,
+        "speed": 4000,
+        "address": "0x8000000",
+        "elFile": "None",
+        "optionBytes": ".eide/target 1.st.option.bytes.ini",
         "otherCmds": ""
       },
-      "uploadConfigMap": {},
+      "uploadConfigMap": {
+        "JLink": {
+          "bin": "",
+          "baseAddr": "",
+          "cpuInfo": {
+            "vendor": "null",
+            "cpuName": "null"
+          },
+          "proType": 1,
+          "speed": 8000,
+          "otherCmds": ""
+        }
+      },
       "custom_dep": {
         "name": "default",
         "incList": [
+          ".",
           "Start",
           "User",
           "Library",
           ".cmsis/include",
-          "RTE/_Target 1"
+          "RTE/_Target 1",
+          "DK"
         ],
         "libList": [],
         "defineList": [
-          "USE_STDPERIPH_DRIVER"
+          "USE_STDPERIPH_DRIVER",
+          "STM32F10X_MD"
         ]
       },
       "builderOptions": {
@@ -351,7 +368,6 @@
           "beforeBuildTasks": [],
           "afterBuildTasks": [],
           "global": {
-            "use-microLIB": false,
             "output-debug-info": "enable"
           },
           "c/cpp-compiler": {
@@ -365,10 +381,8 @@
           "asm-compiler": {},
           "linker": {
             "output-format": "elf",
-            "xo-base": "",
             "ro-base": "0x08000000",
-            "rw-base": "0x20000000",
-            "$disableOutputTask": true
+            "rw-base": "0x20000000"
           }
         }
       }
