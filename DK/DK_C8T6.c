@@ -6,8 +6,7 @@ void Sys_Init(void)
     LED_Init();     // 初始化LED灯
     LED_Sys_Init(); // 初始化LED灯
     Key_Init();     // 初始化按键
-    // Motor_Init(); // 初始化电机
-    // PWM_Init();   // 初始化PWM
-    // Servo_Init(); // 初始化舵机
-    OLED_Init(); // 初始化OLED屏幕
+    Motor_Init();   // 初始化电机
+    Servo_Init();   // 初始化舵机
+    OLED_Init();    // 初始化OLED屏幕
 }
