@@ -57,6 +57,34 @@ void BT_SendString(char *String)
     }
 }
 
+void BT_SendDataPacket(uint16_t count, uint8_t uvLevel, DHT11_Data_TypeDef dht11_data)
+{
+    uint8_t packet[10];
+    uint8_t checksum = 0;
+
+    packet[0] = 0xA5; // 帧头
+    packet[1] = (count >> 8) & 0xFF; // count 高字节
+    packet[2] = count & 0xFF; // count 低字节
+    packet[3] = uvLevel; // uvLevel
+    packet[4] = dht11_data.humi_int; // 湿度整数部分
+    packet[5] = dht11_data.humi_deci; // 湿度小数部分
+    packet[6] = dht11_data.temp_int; // 温度整数部分
+    packet[7] = dht11_data.temp_deci; // 温度小数部分
+
+    // 计算校验和
+    for (int i = 1; i < 8; i++) {
+        checksum += packet[i];
+    }
+    packet[8] = checksum; // 校验和
+    packet[9] = 0x5A; // 帧尾
+
+    // 发送数据包
+    for (int i = 0; i < 10; i++) {
+        while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+        USART_SendData(USART2, packet[i]);
+    }
+}
+
 /**
  * @brief USART2中断服务例程
  *

@@ -1,15 +1,17 @@
 
 #include "DK_C8T6.h"
 #include "SD12.h"
+#include "BT.h"
+#include "DHT11.h"
 
 int main(void)
 {
     DHT11_Data_TypeDef DHT11_Data;
-    int keyValue = 0; // 初始化按键值为0，用于存储上一次的按键值
+    int keyValue   = 0; // 初始化按键值为0，用于存储上一次的按键值
+    uint16_t count = 0;
+    uint8_t uvLevel;
 
-    Sys_Init();   // 系统初始化
-    SD12_Init();  // 初始化SD12紫外线传感器
-    DHT11_Init(); // 初始化DHT11传感器
+    Sys_Init(); // 系统初始化
 
     OLED_ShowNum(1, 1, keyValue, 2); // 初始显示0
 
@@ -67,6 +69,12 @@ int main(void)
         // 在OLED上显示紫外线强度等级
         OLED_ShowString(4, 1, "UV Level:");
         OLED_ShowNum(4, 10, uvLevel, 2);
+
+        count = CountSensor_Get(); // 获取计数传感器的计数值
+        OLED_ShowString(3, 7, "Count:");
+        OLED_ShowNum(3, 13, count, 4);
+
+        BT_SendDataPacket(count, uvLevel, DHT11_Data);
 
         Delay_ms(50); // 延时50ms
     }
