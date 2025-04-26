@@ -67,9 +67,9 @@ uint8_t Key_GetNum(void)
             if (GPIO_ReadInputDataBit(GPIOB, colPins[col]) == 0) // 检测到按键按下
             {
                 // 在这里添加调试显示代码
-                OLED_ShowNum(2, 1, row, 1); // 显示行号
-                OLED_ShowNum(2, 3, col, 1); // 显示列号
-                OLED_ShowNum(3, 1, 88, 2); // 显示一个固定数字，表示进入了按键检测分支
+                // OLED_ShowNum(2, 1, row, 1); // 显示行号
+                // OLED_ShowNum(2, 3, col, 1); // 显示列号
+                // OLED_ShowNum(3, 1, 88, 2);  // 显示一个固定数字，表示进入了按键检测分支
 
                 Delay_ms(20);                                            // 延时消抖
                 while (GPIO_ReadInputDataBit(GPIOB, colPins[col]) == 0); // 等待按键释放
