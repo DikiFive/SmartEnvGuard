@@ -74,7 +74,7 @@ uint8_t Key_GetNum(void)
                 Delay_ms(20);                                            // 延时消抖
                 while (GPIO_ReadInputDataBit(GPIOB, colPins[col]) == 0); // 等待按键释放
                 Delay_ms(20);                                            // 延时消抖
-                KeyNum = row * 4 + col + 1;                              // 计算键值(1-16)
+                KeyNum = (3 - col) * 4 + (3 - row) + 1;                  // 计算键值(1-16)
                 break;
             }
         }
