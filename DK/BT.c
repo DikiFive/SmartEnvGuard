@@ -1,7 +1,8 @@
 #include "BT.h"
 
-char BT_RxPacket[100]; // 蓝牙接收数据包
-uint8_t BT_RxFlag = 0; // 蓝牙接收标志
+uint8_t BT_RxBuffer[4]; // 蓝牙接收缓冲区
+uint8_t BT_RxFlag = 0;  // 蓝牙接收标志
+BT_Packet_t BT_Packet;  // 解析后的数据包结构体
 
 void BT_Init(void)
 {
@@ -61,22 +62,22 @@ void BT_SendDataPacket(uint8_t count, uint8_t uvLevel, float humi, float temp) /
     uint8_t checksum = 0;
     uint8_t *pFloat;
 
-    packet[0] = 0xA5;      // 帧头
-    packet[1] = count;     // count
-    packet[2] = uvLevel;   // uvLevel
+    packet[0] = 0xA5;    // 帧头
+    packet[1] = count;   // count
+    packet[2] = uvLevel; // uvLevel
 
     // 湿度数据
-    pFloat = (uint8_t *)&humi;
+    pFloat    = (uint8_t *)&humi;
     packet[3] = pFloat[0];
     packet[4] = pFloat[1];
     packet[5] = pFloat[2];
     packet[6] = pFloat[3];
 
     // 温度数据
-    pFloat = (uint8_t *)&temp;
-    packet[7] = pFloat[0];
-    packet[8] = pFloat[1];
-    packet[9] = pFloat[2];
+    pFloat     = (uint8_t *)&temp;
+    packet[7]  = pFloat[0];
+    packet[8]  = pFloat[1];
+    packet[9]  = pFloat[2];
     packet[10] = pFloat[3];
 
     // 计算校验和
@@ -104,46 +105,67 @@ void USART2_IRQHandler(void)
 {
     // 静态变量，用于记录接收状态
     static uint8_t RxState = 0;
-    // 静态变量，用于指向接收到的数据包中的下一个字节位置
-    static uint8_t pRxPacket = 0;
+    // 静态变量，用于存储接收到的数据包
+    static uint8_t RxPacket[8];
+    // 静态变量，用于记录接收位置
+    static uint8_t RxPos = 0;
 
     // 检查USART2的接收数据寄存器非空中断状态是否设置
     if (USART_GetITStatus(USART2, USART_IT_RXNE) == SET) {
         // 读取接收到的数据
         uint8_t RxData = USART_ReceiveData(USART2);
 
-        // 回显功能：将接收到的数据立即发送回去
-        while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-        USART_SendData(USART2, RxData);
-
         // 根据接收状态机处理数据
         if (RxState == 0) {
-            // 状态0：等待起始字符'@'
-            if (RxData == '@' && BT_RxFlag == 0) {
-                // 接收到起始字符，初始化接收状态和数据包指针
-                RxState   = 1;
-                pRxPacket = 0;
+            // 状态0：等待帧头0xA5
+            if (RxData == 0xA5 && BT_RxFlag == 0) {
+                RxState = 1;
+                RxPos = 0;
+                RxPacket[RxPos++] = RxData; // 存储帧头
             }
         } else if (RxState == 1) {
             // 状态1：接收数据包内容
-            if (RxData == '\r') {
-                // 数据包内容结束，进入状态2
-                RxState = 2;
-            } else {
-                // 继续接收数据包内容
-                BT_RxPacket[pRxPacket++] = RxData;
-            }
-        } else if (RxState == 2) {
-            // 状态2：等待数据包结束字符'\n'
-            if (RxData == '\n') {
-                // 数据包接收完成，终止数据包，重置接收状态，设置接收标志
-                RxState                = 0;
-                BT_RxPacket[pRxPacket] = '\0';
-                BT_RxFlag              = 1;
+            RxPacket[RxPos++] = RxData;
+            if (RxPos >= 8) { // 已接收完整数据包
+                // 将数据包复制到接收缓冲区
+                memcpy(BT_RxBuffer, RxPacket, 8);
+                // 设置接收标志
+                BT_RxFlag = 1;
+                RxState = 0; // 重置状态机
             }
         }
 
         // 清除接收数据寄存器非空中断标志
         USART_ClearITPendingBit(USART2, USART_IT_RXNE);
     }
+}
+
+/**
+ * @brief 解析蓝牙数据包
+ * @return 0:解析成功 -1:校验失败 -2:帧头帧尾错误
+ */
+int8_t BT_ParsePacket(void)
+{
+    uint8_t checksum = 0;
+
+    // 检查帧头和帧尾
+    if (BT_RxBuffer[0] != 0xA5 || BT_RxBuffer[3] != 0x5A) {
+        return -2;
+    }
+
+    // 计算校验和(5个标志位之和)
+    checksum = BT_RxBuffer[1];
+
+    // 验证校验和
+    if (BT_RxBuffer[2] != checksum) {
+        return -1;
+    }
+
+    // 解析数据到结构体
+    BT_Packet.header = BT_RxBuffer[0];
+    BT_Packet.flags = BT_RxBuffer[1];
+    BT_Packet.checksum = BT_RxBuffer[2];
+    BT_Packet.footer = BT_RxBuffer[3];
+
+    return 0;
 }

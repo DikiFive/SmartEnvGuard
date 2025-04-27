@@ -1,14 +1,14 @@
 #include "stm32f10x.h" // Device header
 #include "dk_C8T6.h"
 
-uint8_t CountSensor_Count;
+uint8_t RED_Flag = 0; // 计数值
 
 /**
  * 函    数：计数传感器初始化
  * 参    数：无
  * 返 回 值：无
  */
-void CountSensor_Init(void)
+void RED_Init(void)
 {
     /*开启时钟*/
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); // 开启GPIOA的时钟
@@ -53,9 +53,9 @@ void CountSensor_Init(void)
  * 参    数：无
  * 返 回 值：计数值，范围：0~65535
  */
-uint8_t CountSensor_Get(void)
+uint8_t RED_Get(void)
 {
-    return CountSensor_Count;
+    return RED_Flag;
 }
 
 /**
@@ -75,10 +75,10 @@ void EXTI9_5_IRQHandler(void)
                                             // 否则中断将连续不断地触发，导致主程序卡死
         /*如果出现数据乱跳的现象，可再次判断引脚电平，以避免抖动*/
         if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_7) == 0) {
-            CountSensor_Count = 1;
+            RED_Flag = 1; //
 
         } else {
-            CountSensor_Count = 0;
+            RED_Flag = 0;
         }
     }
 }
