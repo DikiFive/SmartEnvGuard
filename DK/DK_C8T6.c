@@ -36,10 +36,10 @@ typedef enum {
  * @brief 温湿度值控制相关变量
  */
 static TempHumiMode_t currentTempHumiMode = MODE_SENSOR; // 当前温湿度值来源模式
-static uint8_t fixed_temp_int = 0;   // 固定温度值的整数部分
-static uint8_t fixed_temp_deci = 0;  // 固定温度值的小数部分
-static uint8_t fixed_humi_int = 0;   // 固定湿度值的整数部分
-static uint8_t fixed_humi_deci = 0;  // 固定湿度值的小数部分
+static uint8_t fixed_temp_int             = 0;           // 固定温度值的整数部分
+static uint8_t fixed_temp_deci            = 0;           // 固定温度值的小数部分
+static uint8_t fixed_humi_int             = 0;           // 固定湿度值的整数部分
+static uint8_t fixed_humi_deci            = 0;           // 固定湿度值的小数部分
 
 /**
  * @brief 系统运行时间和定时器变量（由Timer.c维护）
@@ -123,7 +123,7 @@ SensorData_t GetAllSensorData(void)
     // 获取DHT11数据
     if (DHT11_Read_TempAndHumidity(&DHT11_Data) == SUCCESS) {
         // 读取成功，保存为有效数据
-        data.dht11_status = 0;
+        data.dht11_status                = 0;
         last_valid_sensor_data.humi_int  = DHT11_Data.humi_int;
         last_valid_sensor_data.humi_deci = DHT11_Data.humi_deci;
         last_valid_sensor_data.temp_int  = DHT11_Data.temp_int;
@@ -230,17 +230,17 @@ KeyStatus_t HandleKeyPress(int currentKeyValue)
             switch (currentKeyValue) {
                 case 13: // 设置固定值1（温度32度，湿度62%）
                     currentTempHumiMode = MODE_FIXED;
-                    fixed_temp_int = 32;
-                    fixed_temp_deci = 0;
-                    fixed_humi_int = 62;
-                    fixed_humi_deci = 0;
+                    fixed_temp_int      = 32;
+                    fixed_temp_deci     = 0;
+                    fixed_humi_int      = 62;
+                    fixed_humi_deci     = 0;
                     break;
                 case 14: // 设置固定值2（温度25度，湿度40%）
                     currentTempHumiMode = MODE_FIXED;
-                    fixed_temp_int = 25;
-                    fixed_temp_deci = 0;
-                    fixed_humi_int = 40;
-                    fixed_humi_deci = 0;
+                    fixed_temp_int      = 25;
+                    fixed_temp_deci     = 0;
+                    fixed_humi_int      = 40;
+                    fixed_humi_deci     = 0;
                     break;
                 case 15: // 切换回传感器测量值
                     currentTempHumiMode = MODE_SENSOR;
@@ -311,17 +311,17 @@ void ProcessSystemTasks(void)
     static BTStatus_t btStatus       = {0};    // 蓝牙状态
     static KeyStatus_t keyStatus     = {0, 0}; // 按键状态
 
-        // 处理按键输入和传感器数据（100ms一次）
-        if (system_runtime_s * 1000 + ms_count - last_update_time >= 100) {
-            keyStatus               = HandleKeyPress(Key_GetNum());
-            // 获取当前有效的温湿度值（可能是传感器值或固定值）
-            SensorData_t sensorData = GetAllSensorData();
+    // 处理按键输入和传感器数据（100ms一次）
+    if (system_runtime_s * 1000 + ms_count - last_update_time >= 100) {
+        keyStatus = HandleKeyPress(Key_GetNum());
+        // 获取当前有效的温湿度值（可能是传感器值或固定值）
+        SensorData_t sensorData = GetAllSensorData();
 
-            // 计算温湿度浮点数值（用于自动控制逻辑，使用当前有效值）
-            float humi = (float)sensorData.humi_int + (float)sensorData.humi_deci / 10.0;
-            float temp = (float)sensorData.temp_int + (float)sensorData.temp_deci / 10.0;
+        // 计算温湿度浮点数值（用于自动控制逻辑，使用当前有效值）
+        float humi = (float)sensorData.humi_int + (float)sensorData.humi_deci / 10.0;
+        float temp = (float)sensorData.temp_int + (float)sensorData.temp_deci / 10.0;
 
-            // 处理定时器更新的标志
+        // 处理定时器更新的标志
         if (update_flag) {
             update_flag = 0; // 清除标志
 
@@ -511,7 +511,7 @@ void OLED_UpdateDisplay(int keyValue, uint8_t dht11_status,
     if (!last_display.initialized) {
         OLED_ShowString(1, 1, "K:");
         OLED_ShowString(1, 5, "R:");
-        OLED_ShowString(1, 8, "D:");
+        OLED_ShowString(1, 9, "D:");
         OLED_ShowString(2, 1, "hm:");
         OLED_ShowString(3, 1, "T:");
         OLED_ShowString(3, 5, ".");
@@ -533,22 +533,22 @@ void OLED_UpdateDisplay(int keyValue, uint8_t dht11_status,
     OLED_ShowString(1, 7, redValue ? "Y" : "N"); // R:Y/N
     last_display.redValue = redValue;
 
-    // 更新DHT11状态（只在成功时显示OK，避免频繁闪烁）
+    // 更新DHT11状态（成功显示OK，连续三次失败才显示ERR）
     static uint8_t err_count = 0;
     if (dht11_status == 0) {
         // 成功时立即显示OK
-        if (last_display.dht11_status != 0) {
-            OLED_ShowString(1, 10, "OK ");
-            last_display.dht11_status = 0;
-        }
+        OLED_ShowString(1, 10, "OK ");
+        last_display.dht11_status = 0;
         err_count = 0;
     } else {
-        // 错误时累计3次才显示ERR
+        // 错误时累计次数
         err_count++;
-        if (err_count >= 3 && last_display.dht11_status == 0) {
+        if (err_count >= 3) {
+            // 连续三次失败时显示ERR
             OLED_ShowString(1, 10, "ERR");
             last_display.dht11_status = 1;
         }
+        // 否则保持原来的显示状态
     }
 
     // 更新湿度（如果改变）
