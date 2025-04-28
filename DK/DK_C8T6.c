@@ -360,6 +360,7 @@ void ProcessSystemTasks(void)
                     if (cycle_state == 0) {
                         Fan_ON();
                         UV_ON();
+                        Buzzer_ON();
                         Motor_SetSpeed(20);
                         cycle_state = 1;
                     }
@@ -367,6 +368,7 @@ void ProcessSystemTasks(void)
                     if (cycle_state == 1) {
                         Fan_OFF();
                         UV_OFF();
+                        Buzzer_OFF();
                         Motor_SetSpeed(0);
                         cycle_state = 0;
                     }
@@ -539,7 +541,7 @@ void OLED_UpdateDisplay(int keyValue, uint8_t dht11_status,
         // 成功时立即显示OK
         OLED_ShowString(1, 10, "OK ");
         last_display.dht11_status = 0;
-        err_count = 0;
+        err_count                 = 0;
     } else {
         // 错误时累计次数
         err_count++;

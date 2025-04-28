@@ -17,12 +17,12 @@ extern uint8_t RED_Flag;
 uint32_t TimingDelay = 0;
 
 // 定义全局变量供主循环访问
-uint32_t ms_count = 0;           // 毫秒计数器，用于更新运行时间
-uint32_t uv_timer_ms = 0;        // 红外触发UV灯计时器
-uint8_t uv_infrared_active = 0;  // 红外触发UV灯工作标志
-uint32_t cycle_timer_ms = 0;     // 循环模式计时器
-uint8_t cycle_state = 0;         // 循环模式状态
-uint8_t update_flag = 0;         // 定时更新标志，用于主循环中处理
+uint32_t ms_count          = 0; // 毫秒计数器，用于更新运行时间
+uint32_t uv_timer_ms       = 0; // 红外触发UV灯计时器
+uint8_t uv_infrared_active = 0; // 红外触发UV灯工作标志
+uint32_t cycle_timer_ms    = 0; // 循环模式计时器
+uint8_t cycle_state        = 0; // 循环模式状态
+uint8_t update_flag        = 0; // 定时更新标志，用于主循环中处理
 
 void Timer_Init(void)
 {
@@ -78,9 +78,9 @@ void TIM4_IRQHandler(void)
 
         // 更新系统运行时间
         ms_count++;
-        if (ms_count >= 1000) {  // 每1000ms（1秒）
-            system_runtime_s++;   // 增加一秒
-            ms_count = 0;         // 重置毫秒计数器
+        if (ms_count >= 1000) { // 每1000ms（1秒）
+            system_runtime_s++; // 增加一秒
+            ms_count = 0;       // 重置毫秒计数器
         }
 
         /*在此添加其他需要1ms定时执行的任务*/
@@ -90,17 +90,15 @@ void TIM4_IRQHandler(void)
             if (uv_infrared_active) {
                 uv_timer_ms++;
             }
-            update_flag = 1;  // 设置更新标志
-        }
-        else if (currentMode == MODE_CYCLE) {
+            update_flag = 1; // 设置更新标志
+        } else if (currentMode == MODE_CYCLE) {
             cycle_timer_ms++;
             if (cycle_timer_ms >= 15000) {
                 cycle_timer_ms = 0;
             }
-            update_flag = 1;  // 设置更新标志
-        }
-        else {
-            uv_timer_ms = 0;
+            update_flag = 1; // 设置更新标志
+        } else {
+            uv_timer_ms    = 0;
             cycle_timer_ms = 0;
         }
 
