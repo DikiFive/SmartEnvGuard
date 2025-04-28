@@ -1,9 +1,22 @@
+/**
+ * @file     DK_C8T6.h
+ * @brief    STM32F103C8T6主控制程序头文件
+ * @details  定义了系统的：
+ *          - 工作模式
+ *          - 数据结构
+ *          - 功能函数接口
+ * @author   [作者]
+ * @date     [日期]
+ * @version  v1.0
+ */
+
 #ifndef __DK_C8T6_H
 #define __DK_C8T6_H
 
-#include <stdint.h>    // 引入标准整数类型定义[2,5](@ref)
-#include "stm32f10x.h" // Device header
+#include <stdint.h>    // 标准整数类型定义
+#include "stm32f10x.h" // STM32F10x外设库头文件
 
+// 包含所有外设驱动头文件
 #include "AD.h"
 #include "BT.h"
 #include "Buzzer.h"
@@ -21,49 +34,95 @@
 #include "Servo.h"
 #include "Timer.h"
 
-// 定义传感器数据结构体
+/**
+ * @brief 系统工作模式枚举
+ */
+typedef enum {
+    MODE_MANUAL = 0, /**< 手动模式：通过按键直接控制设备 */
+    MODE_AUTO   = 1, /**< 自动模式：系统自动控制设备 */
+    MODE_BT     = 2  /**< 蓝牙模式：通过蓝牙控制设备 */
+} SystemMode_t;
+
+/**
+ * @brief 声明为外部变量，以便其他文件访问
+ */
+extern SystemMode_t currentMode;
+
+/**
+ * @brief 传感器数据结构体
+ * @details 包含所有传感器的测量数据
+ */
 typedef struct {
-    uint8_t dht11_status;
-    uint8_t humi_int;
-    uint8_t humi_deci;
-    uint8_t temp_int;
-    uint8_t temp_deci;
-    uint8_t uvLevel;
-    uint8_t redValue;
+    uint8_t dht11_status; /**< DHT11状态：0-正常，1-错误 */
+    uint8_t humi_int;     /**< 湿度整数部分 */
+    uint8_t humi_deci;    /**< 湿度小数部分 */
+    uint8_t temp_int;     /**< 温度整数部分 */
+    uint8_t temp_deci;    /**< 温度小数部分 */
+    uint8_t uvLevel;      /**< 紫外线等级(0-11) */
+    uint8_t redValue;     /**< 红外传感器值(0-1) */
 } SensorData_t;
 
-// 定义按键处理结果结构体
+/**
+ * @brief 按键处理结果结构体
+ */
 typedef struct {
-    int keyValue;
-    uint8_t changed; // 标记按键值是否发生改变
+    int keyValue;    /**< 当前按键值 */
+    uint8_t changed; /**< 按键值是否改变标志 */
 } KeyStatus_t;
 
-// 定义蓝牙处理结果结构体
+/**
+ * @brief 蓝牙处理结果结构体
+ */
 typedef struct {
-    int8_t status;      // 蓝牙操作状态：0成功，其他失败
-    uint8_t uv_flag;    // UV灯控制标志
-    uint8_t servo_flag; // 舵机控制标志
-    uint8_t fan_flag;   // 风扇控制标志
-    uint8_t motor_flag; // 电机控制标志
-    uint8_t mode_flag;  // 模式控制标志
+    int8_t status;      /**< 蓝牙操作状态：0成功，其他失败 */
+    uint8_t uv_flag;    /**< UV灯控制标志 */
+    uint8_t servo_flag; /**< 舵机控制标志 */
+    uint8_t fan_flag;   /**< 风扇控制标志 */
+    uint8_t motor_flag; /**< 电机控制标志 */
+    uint8_t mode_flag;  /**< 模式控制标志 */
 } BTStatus_t;
 
-// 系统初始化函数
+/**
+ * @brief  系统初始化
+ * @return 无
+ */
 void Sys_Init(void);
 
-// 获取所有传感器数据
+/**
+ * @brief  获取所有传感器数据
+ * @return SensorData_t 传感器数据结构体
+ */
 SensorData_t GetAllSensorData(void);
 
-// 处理按键输入
+/**
+ * @brief  处理按键输入
+ * @param  currentKeyValue 当前按键值
+ * @return KeyStatus_t 按键处理结果
+ */
 KeyStatus_t HandleKeyPress(int currentKeyValue);
 
-// 处理蓝牙数据包
+/**
+ * @brief  处理蓝牙数据
+ * @return BTStatus_t 蓝牙处理结果
+ */
 BTStatus_t HandleBluetooth(void);
 
-// OLED显示更新
+/**
+ * @brief  更新OLED显示
+ * @param  keyValue     按键值
+ * @param  dht11_status DHT11状态
+ * @param  humi_int     湿度整数
+ * @param  humi_deci    湿度小数
+ * @param  temp_int     温度整数
+ * @param  temp_deci    温度小数
+ * @param  uvLevel      紫外线等级
+ * @param  redValue     红外值
+ * @param  bt_status    蓝牙状态
+ * @return 无
+ */
 void OLED_UpdateDisplay(int keyValue, uint8_t dht11_status,
                         uint8_t humi_int, uint8_t humi_deci,
                         uint8_t temp_int, uint8_t temp_deci,
                         uint8_t uvLevel, uint8_t redValue, int8_t bt_status);
 
-#endif
+#endif /* __DK_C8T6_H */

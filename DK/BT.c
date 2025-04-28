@@ -1,9 +1,35 @@
+/**
+ * @file     BT.c
+ * @brief    蓝牙通信模块驱动程序
+ * @details  实现基于USART2的蓝牙通信功能，包括：
+ *          - 蓝牙串口初始化
+ *          - 数据发送功能
+ *          - 数据接收及解析功能
+ *          - 状态监控及错误处理
+ * @author   [作者]
+ * @date     [日期]
+ * @version  v1.0
+ */
+
 #include "BT.h"
 
-uint8_t BT_RxBuffer[4]; // 蓝牙接收缓冲区
-uint8_t BT_RxFlag = 0;  // 蓝牙接收标志
-BT_Packet_t BT_Packet;  // 解析后的数据包结构体
+/** @brief 蓝牙接收缓冲区大小为4字节 */
+uint8_t BT_RxBuffer[4];
+/** @brief 蓝牙接收完成标志，1表示接收到完整数据包 */
+uint8_t BT_RxFlag = 0;
+/** @brief 解析后的数据包结构体 */
+BT_Packet_t BT_Packet;
 
+/**
+ * @brief  蓝牙模块初始化
+ * @details 完成以下配置：
+ *         1. 初始化USART2引脚（PA2-TX, PA3-RX）
+ *         2. 配置串口参数（9600波特率，8位数据，1位停止，无校验）
+ *         3. 启用接收中断
+ *         4. 配置NVIC中断优先级
+ * @param  无
+ * @return 无
+ */
 void BT_Init(void)
 {
     /* 开启时钟 */
@@ -48,6 +74,11 @@ void BT_Init(void)
     USART_Cmd(USART2, ENABLE);
 }
 
+/**
+ * @brief  发送字符串到蓝牙模块
+ * @param  String 要发送的以'\0'结尾的字符串
+ * @return 无
+ */
 void BT_SendString(char *String)
 {
     while (*String) {
@@ -56,7 +87,23 @@ void BT_SendString(char *String)
     }
 }
 
-void BT_SendDataPacket(uint8_t count, uint8_t uvLevel, float humi, float temp) // 湿度和温度数据
+/**
+ * @brief  发送传感器数据包到蓝牙模块
+ * @details 数据包格式：
+ *         - 帧头(1字节): 0xA5
+ *         - 计数值(1字节)
+ *         - UV等级(1字节)
+ *         - 湿度(4字节float)
+ *         - 温度(4字节float)
+ *         - 校验和(1字节)
+ *         - 帧尾(1字节): 0x5A
+ * @param  count   计数值
+ * @param  uvLevel 紫外线等级(0-11)
+ * @param  humi    湿度值(浮点数)
+ * @param  temp    温度值(浮点数)
+ * @return 无
+ */
+void BT_SendDataPacket(uint8_t count, uint8_t uvLevel, float humi, float temp)
 {
     uint8_t packet[13]; // 数据包长度增加
     uint8_t checksum = 0;
@@ -95,11 +142,17 @@ void BT_SendDataPacket(uint8_t count, uint8_t uvLevel, float humi, float temp) /
 }
 
 /**
- * @brief USART2中断服务例程
- *
- * 本函数用于处理USART2的中断请求，主要负责串口接收数据的处理
- * 它通过检查接收数据寄存器非空中断标志来决定是否读取数据
- * 接收到的数据将根据特定协议进行处理，以组装成完整的数据包
+ * @brief  USART2中断服务函数
+ * @details 实现以下功能：
+ *         1. 接收数据状态机:
+ *            - 状态0：等待帧头(0xA5)
+ *            - 状态1：接收数据内容
+ *            - 状态2：接收包尾
+ *         2. 数据包组装和存储
+ *         3. 接收完成标志设置
+ * @note   本函数为中断服务函数，由硬件自动调用
+ * @param  无
+ * @return 无
  */
 void USART2_IRQHandler(void)
 {
@@ -141,8 +194,15 @@ void USART2_IRQHandler(void)
 }
 
 /**
- * @brief 解析蓝牙数据包
- * @return 0:解析成功 -1:校验失败 -2:帧头帧尾错误
+ * @brief  解析接收到的蓝牙数据包
+ * @details 完成以下操作：
+ *         1. 校验数据包格式（帧头0xA5，帧尾0x5A）
+ *         2. 计算并验证校验和
+ *         3. 解析各个标志位到结构体中
+ * @return 解析结果：
+ *         - 0  : 解析成功
+ *         - -1 : 校验和错误
+ *         - -2 : 帧头帧尾错误
  */
 int8_t BT_ParsePacket(void)
 {

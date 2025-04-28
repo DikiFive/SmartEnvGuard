@@ -1,19 +1,56 @@
+/**
+ * @file     DHT11.c
+ * @brief    DHT11温湿度传感器驱动程序
+ * @details  实现DHT11的通信协议和数据读取功能。DHT11使用单总线通信，
+ *          需要严格的时序控制。完整的通信过程包括：
+ *          1. 主机发送起始信号
+ *          2. DHT11响应
+ *          3. DHT11连续发送40位数据
+ *          4. 数据校验
+ * @author   [作者]
+ * @date     [日期]
+ * @version  v1.0
+ */
+
 #include "dht11.h"
 
-/* 可以在下面的宏定义中把后面的延时函数替换换SysTick的延时函数，就是想用那个就换成那个的 */
+/* 延时函数配置，可根据需要切换不同的延时实现方式 */
 
 #define DHT11_DELAY_US(us) Delay_us(us)
 #define DHT11_DELAY_MS(ms) Delay_ms(ms)
 
+/**
+ * @brief  DHT11引脚配置函数（内部使用）
+ */
 static void DHT11_GPIO_Config(void);
+
+/**
+ * @brief  将DHT11数据引脚配置为上拉输入模式（内部使用）
+ */
 static void DHT11_Mode_IPU(void);
+
+/**
+ * @brief  将DHT11数据引脚配置为推挽输出模式（内部使用）
+ */
 static void DHT11_Mode_Out_PP(void);
+
+/**
+ * @brief  从DHT11读取一个字节（内部使用）
+ * @return 读取到的字节数据
+ * @note   按照DHT11的通信协议，每bit数据的时间编码：
+ *         - 26-28us的高电平表示数据'0'
+ *         - 70us的高电平表示数据'1'
+ */
 static uint8_t DHT11_ReadByte(void);
 
 /**
- * @brief  DHT11 初始化函数
+ * @brief  DHT11初始化
+ * @details 完成以下配置：
+ *         1. 配置DHT11的数据引脚
+ *         2. 设置引脚为推挽输出模式
+ *         3. 发送初始电平
  * @param  无
- * @retval 无
+ * @return 无
  */
 void DHT11_Init(void)
 {
@@ -22,11 +59,14 @@ void DHT11_Init(void)
     DHT11_H; // 拉高GPIOB10
 }
 
-/*
- * 函数名：DHT11_GPIO_Config
- * 描述  ：配置DHT11用到的I/O口
- * 输入  ：无
- * 输出  ：无
+/**
+ * @brief  配置DHT11用到的GPIO引脚
+ * @details 配置过程：
+ *         1. 使能GPIO时钟
+ *         2. 配置GPIO为推挽输出模式
+ *         3. 设置GPIO速度为50MHz
+ * @param  无
+ * @return 无
  */
 static void DHT11_GPIO_Config(void)
 {
@@ -49,11 +89,12 @@ static void DHT11_GPIO_Config(void)
     GPIO_Init(DHT11_GPIO_PORT, &GPIO_InitStructure);
 }
 
-/*
- * 函数名：DHT11_Mode_IPU
- * 描述  ：使DHT11-DATA引脚变为上拉输入模式
- * 输入  ：无
- * 输出  ：无
+/**
+ * @brief  将DHT11数据线配置为上拉输入模式
+ * @details 用于接收DHT11发送的数据时，
+ *         需要将数据线切换为输入模式
+ * @param  无
+ * @return 无
  */
 static void DHT11_Mode_IPU(void)
 {
@@ -69,11 +110,12 @@ static void DHT11_Mode_IPU(void)
     GPIO_Init(DHT11_GPIO_PORT, &GPIO_InitStructure);
 }
 
-/*
- * 函数名：DHT11_Mode_Out_PP
- * 描述  ：使DHT11-DATA引脚变为推挽输出模式
- * 输入  ：无
- * 输出  ：无
+/**
+ * @brief  将DHT11数据线配置为推挽输出模式
+ * @details 用于主机发送起始信号时，
+ *         需要将数据线切换为输出模式
+ * @param  无
+ * @return 无
  */
 static void DHT11_Mode_Out_PP(void)
 {
@@ -92,8 +134,13 @@ static void DHT11_Mode_Out_PP(void)
     GPIO_Init(DHT11_GPIO_PORT, &GPIO_InitStructure);
 }
 
-/*
- * 从DHT11读取一个字节，MSB先行
+/**
+ * @brief  从DHT11读取一个字节
+ * @details 按照DHT11的通信协议读取8位数据：
+ *         1. 每位数据以50us低电平开始
+ *         2. 接着是26-28us或70us的高电平，表示0或1
+ *         3. 按照MSB（最高位）先行的顺序接收
+ * @return 读取到的字节数据
  */
 static uint8_t DHT11_ReadByte(void)
 {
@@ -123,9 +170,21 @@ static uint8_t DHT11_ReadByte(void)
     return temp;
 }
 
-/*
- * 一次完整的数据传输为40bit，高位先出
- * 8bit 湿度整数 + 8bit 湿度小数 + 8bit 温度整数 + 8bit 温度小数 + 8bit 校验和
+/**
+ * @brief  从DHT11读取温湿度数据
+ * @details 完整的数据传输过程：
+ *         1. 主机发送起始信号（拉低18ms，再拉高30us）
+ *         2. 等待DHT11响应（低80us，高80us）
+ *         3. 接收40位数据：
+ *            - 8位湿度整数
+ *            - 8位湿度小数
+ *            - 8位温度整数
+ *            - 8位温度小数
+ *            - 8位校验和
+ * @param  DHT11_Data 存储读取到的温湿度数据
+ * @return 操作结果：
+ *         - SUCCESS: 读取成功
+ *         - ERROR: 读取失败
  */
 uint8_t DHT11_Read_TempAndHumidity(DHT11_Data_TypeDef *DHT11_Data)
 {

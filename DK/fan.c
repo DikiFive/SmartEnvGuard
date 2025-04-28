@@ -1,6 +1,25 @@
+/**
+ * @file     fan.c
+ * @brief    风扇驱动程序
+ * @details  实现风扇的初始化和基本控制功能：
+ *          - GPIO配置
+ *          - 开关控制
+ * @author   [作者]
+ * @date     [日期]
+ * @version  v1.0
+ */
+
 #include "fan.h"
 
-// 初始化风扇
+/**
+ * @brief  风扇初始化
+ * @details 完成以下配置：
+ *         1. 使能GPIO端口时钟
+ *         2. 配置控制引脚为推挽输出
+ *         3. 设置默认状态为关闭
+ * @param  无
+ * @return 无
+ */
 void Fan_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -17,13 +36,25 @@ void Fan_Init(void)
     GPIO_SetBits(Fan_GPIO_Port, Fan_Pin); // Updated to use Fan_Pin
 }
 
-// 打开风扇
+/**
+ * @brief  打开风扇
+ * @details 将控制引脚设置为低电平，驱动风扇转动
+ * @note   使用低电平触发
+ * @param  无
+ * @return 无
+ */
 void Fan_ON(void)
 {
     GPIO_ResetBits(Fan_GPIO_Port, Fan_Pin); // 低电平触发
 }
 
-// 关闭风扇
+/**
+ * @brief  关闭风扇
+ * @details 将控制引脚设置为高电平，停止风扇转动
+ * @note   使用高电平关闭
+ * @param  无
+ * @return 无
+ */
 void Fan_OFF(void)
 {
     GPIO_SetBits(Fan_GPIO_Port, Fan_Pin); // 高电平关闭

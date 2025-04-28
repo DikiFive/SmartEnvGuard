@@ -1,10 +1,24 @@
-#include "stm32f10x.h" // Device header
-#include "dk_C8T6.h"
+/**
+ * @file     AD.c
+ * @brief    STM32F10x ADC驱动程序
+ * @details  实现了ADC的初始化和数据读取功能
+ * @author   [作者]
+ * @date     [日期]
+ * @version  v1.0
+ */
+
+#include "stm32f10x.h" // STM32F10x头文件
+#include "dk_C8T6.h"   // 项目主设备头文件
 
 /**
- * 函    数：AD初始化
- * 参    数：无
- * 返 回 值：无
+ * @brief    AD初始化函数
+ * @details  完成ADC1的初始化配置，包括：
+ *          1. 配置ADC时钟为72MHz/6=12MHz
+ *          2. 配置PA0为模拟输入模式
+ *          3. 配置ADC1工作参数
+ *          4. 执行ADC校准
+ * @param    无
+ * @return   无
  */
 void AD_Init(void)
 {
@@ -45,9 +59,14 @@ void AD_Init(void)
 }
 
 /**
- * 函    数：获取AD转换的值
- * 参    数：ADC_Channel 指定AD转换的通道，范围：ADC_Channel_x，其中x可以是0/1/2/3
- * 返 回 值：AD转换的值，范围：0~4095
+ * @brief    获取AD转换的值
+ * @details  完成以下操作：
+ *          1. 配置ADC规则组的转换通道和采样时间
+ *          2. 触发一次AD转换
+ *          3. 等待转换完成
+ *          4. 返回转换结果
+ * @param    ADC_Channel 指定AD转换的通道，范围：ADC_Channel_x，其中x可以是0/1/2/3
+ * @return   AD转换的结果，范围：0~4095
  */
 uint16_t AD_GetValue(uint8_t ADC_Channel)
 {

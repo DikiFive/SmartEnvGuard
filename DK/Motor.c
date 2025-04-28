@@ -1,11 +1,28 @@
-#include "stm32f10x.h" // Device header
-#include "PWM.h"
-#include "dk_C8T6.h"
+/**
+ * @file     Motor.c
+ * @brief    直流电机驱动程序
+ * @details  实现电机的基本控制功能：
+ *          - PWM调速
+ *          - 正反转控制
+ *          - 启停控制
+ * @author   [作者]
+ * @date     [日期]
+ * @version  v1.0
+ */
+
+#include "stm32f10x.h" // STM32F10x外设库头文件
+#include "PWM.h"       // PWM驱动头文件
+#include "dk_C8T6.h"   // 项目主头文件
 
 /**
- * 函    数：直流电机初始化
- * 参    数：无
- * 返 回 值：无
+ * @brief  直流电机初始化
+ * @details 完成以下配置：
+ *         1. 使能GPIO时钟
+ *         2. 配置方向控制引脚（PA4和PA5）为推挽输出
+ *         3. 初始化PWM（用于速度控制）
+ * @note   使用TIM3的通道1输出PWM信号
+ * @param  无
+ * @return 无
  */
 void Motor_Init(void)
 {
@@ -22,9 +39,16 @@ void Motor_Init(void)
 }
 
 /**
- * 函    数：直流电机设置速度
- * 参    数：Speed 要设置的速度，范围：-100~100
- * 返 回 值：无
+ * @brief  设置电机速度
+ * @details 通过PWM和方向控制实现速度调节：
+ *         - 正值：正转，PWM占空比对应速度值
+ *         - 负值：反转，PWM占空比对应速度绝对值
+ *         - 零值：停止
+ * @param  Speed 设定速度，范围：-100~100
+ *         - -100~-1：反转，速度随数值增大而增大
+ *         - 0：停止
+ *         - 1~100：正转，速度随数值增大而增大
+ * @return 无
  */
 void Motor_SetSpeed(int8_t Speed)
 {

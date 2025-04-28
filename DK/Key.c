@@ -1,9 +1,27 @@
-#include "stm32f10x.h" // Device header
-#include "Delay.h"
-#include "dk_C8T6.h"
+/**
+ * @file     Key.c
+ * @brief    4x4矩阵键盘驱动程序
+ * @details  实现4x4矩阵键盘的扫描和按键检测功能：
+ *          - 硬件连接：
+ *            * 行线：PA8-PA11
+ *            * 列线：PB12-PB15
+ *          - 扫描原理：
+ *            1. 行线轮流输出低电平
+ *            2. 检测列线电平状态
+ *            3. 根据行列组合确定按键
+ * @author   [作者]
+ * @date     [日期]
+ * @version  v1.0
+ */
 
-// 列线引脚定义 (PB12-PB15)
-#define KEY_COL1_PIN GPIO_Pin_15
+#include "stm32f10x.h" // STM32F10x外设库头文件
+#include "Delay.h"     // 延时函数
+#include "dk_C8T6.h"   // 项目主头文件
+
+/**
+ * @brief 列线引脚定义 (PB12-PB15)
+ */
+#define KEY_COL1_PIN GPIO_Pin_15  /**< 第1列，PB15 */
 #define KEY_COL2_PIN GPIO_Pin_14
 #define KEY_COL3_PIN GPIO_Pin_13
 #define KEY_COL4_PIN GPIO_Pin_12
@@ -15,9 +33,14 @@
 #define KEY_ROW4_PIN GPIO_Pin_8
 
 /**
- * 函    数：按键初始化
- * 参    数：无
- * 返 回 值：无
+ * @brief  矩阵键盘初始化
+ * @details 完成以下配置：
+ *         1. 使能GPIO时钟（GPIOA和GPIOB）
+ *         2. 配置行线为推挽输出（PA8-PA11）
+ *         3. 配置列线为上拉输入（PB12-PB15）
+ *         4. 设置行线初始状态为高电平
+ * @param  无
+ * @return 无
  */
 void Key_Init(void)
 {
@@ -41,10 +64,23 @@ void Key_Init(void)
 }
 
 /**
- * 函    数：按键获取键码
- * 参    数：无
- * 返 回 值：按下按键的键码值，范围：1~16对应矩阵键盘，0代表没有按键按下
- * 注意事项：此函数是阻塞式操作，当按键按住不放时，函数会卡住，直到按键松手
+ * @brief  获取按键键码
+ * @details 通过扫描矩阵键盘获取按键值：
+ *         1. 扫描方式：
+ *            - 依次将每一行设为低电平
+ *            - 检测所有列的状态
+ *            - 根据当前行和检测到的列计算键码
+ *         2. 键码对应关系：
+ *            - 0：无按键按下
+ *            - 1-16：对应矩阵键盘的16个按键
+ *            - 按键布局：
+ *              [1 ] [2 ] [3 ] [4 ]
+ *              [5 ] [6 ] [7 ] [8 ]
+ *              [9 ] [10] [11] [12]
+ *              [13] [14] [15] [16]
+ * @note   此函数为阻塞式操作，会等待按键释放
+ * @param  无
+ * @return uint8_t 按键键码（0-16）
  */
 uint8_t Key_GetNum(void)
 {
