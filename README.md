@@ -3,6 +3,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 基于STM32F103C8T6的智能环境监控系统，集成温湿度检测、紫外线感应、红外触发与多模式控制功能，支持蓝牙远程交互。
+作者：DikiFive（全平台同名）
 
 [English Document](README_EN.md) | [项目文档](docs/) | [演示视频](#)
 
