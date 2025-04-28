@@ -29,17 +29,21 @@ int main(void)
         float temp = (float)sensorData.temp_int + (float)sensorData.temp_deci / 10.0;
         BT_SendDataPacket(sensorData.redValue, sensorData.uvLevel, humi, temp);
 
-        // 温湿度自动控制逻辑
-        // if (sensorData.dht11_status == 0) { // 仅在DHT11读取成功时执行
-        //     if (temp > TEMP_THRESHOLD && humi > HUMI_THRESHOLD) {
-        //         Fan_ON();     // 开启风扇
-        //         LED_Sys_ON(); // 开启紫外线灯
-        //     } else if (currentMode == MODE_MANUAL) {
-        //         // 只有在手动模式下且不满足温湿度条件时，才关闭设备
-        //         Fan_OFF();     // 关闭风扇
-        //         LED_Sys_OFF(); // 关闭紫外线灯
-        //     }
-        // }
+        // 温湿度控制逻辑 (仅在手动模式下执行)
+        if (currentMode == MODE_MANUAL) {
+            if (sensorData.dht11_status == 0) { // 仅在DHT11读取成功时执行
+                if (temp > TEMP_THRESHOLD && humi > HUMI_THRESHOLD) {
+                    Fan_ON(); // 开启风扇
+                    // UV_ON(); // 在手动模式下，紫外线灯由按键控制，不受温湿度影响
+                } else {
+                    // 在手动模式下且不满足温湿度条件时，关闭风扇
+                    Fan_OFF(); // 关闭风扇
+                    // UV_OFF();  // 在手动模式下，紫外线灯由按键控制，不受温湿度影响
+                }
+            }
+             // 在手动模式下，紫外线灯的开关完全由按键控制，不受温湿度影响
+        }
+        // 注意：自动模式下的风扇和紫外线灯控制在TIM4中断中实现
 
         // 处理蓝牙数据
         btStatus = HandleBluetooth();

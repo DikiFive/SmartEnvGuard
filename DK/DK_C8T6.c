@@ -156,6 +156,7 @@ KeyStatus_t HandleKeyPress(int currentKeyValue)
                 case MODE_AUTO:
                     // 从自动模式切换出去时，关闭所有设备
                     UV_OFF();
+                    Fan_OFF();
                     Buzzer_OFF();
                     Motor_SetSpeed(0);
                     currentMode = MODE_BT;
@@ -164,6 +165,7 @@ KeyStatus_t HandleKeyPress(int currentKeyValue)
                     currentMode = MODE_MANUAL;
                     // 切换到手动模式时，关闭所有设备
                     UV_OFF();
+                    Fan_OFF();
                     Buzzer_OFF();
                     Motor_SetSpeed(0);
                     break;
