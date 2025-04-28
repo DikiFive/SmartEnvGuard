@@ -14,6 +14,15 @@
 
 #include <stdint.h>
 
+// 声明外部变量
+extern uint32_t system_runtime_s;  // 系统运行时间(秒)
+extern uint32_t ms_count;          // 毫秒计数器
+extern uint32_t uv_timer_ms;       // 红外触发UV灯计时器
+extern uint8_t uv_infrared_active; // 红外触发UV灯工作标志
+extern uint32_t cycle_timer_ms;    // 循环模式计时器
+extern uint8_t cycle_state;        // 循环模式状态
+extern uint8_t update_flag;        // 定时更新标志
+
 /**
  * @brief  定时器初始化
  * @details 配置TIM4为基本定时器：

@@ -2,6 +2,10 @@
  * @file     DK_C8T6.c
  * @brief    STM32F103C8T6主控制程序
  * @details  实现了系统的核心功能：
+ *          0. 温湿度值控制（按键13-15）：
+ *             - 按键13：将系统温湿度值设为固定值1（温度32度，湿度62%）
+ *             - 按键14：将系统温湿度值设为固定值2（温度25度，湿度40%）
+ *             - 按键15：切换回使用传感器实际测量值
  *          1. 系统初始化
  *          2. 工作模式管理（手动/自动/蓝牙）
  *          3. 传感器数据采集
@@ -14,6 +18,40 @@
  */
 
 #include "DK_C8T6.h"
+#include "Timer.h" // 包含Timer.h以访问定时器相关变量
+
+// 温湿度阈值定义
+#define TEMP_THRESHOLD 31 // 温度阈值（31°C）
+#define HUMI_THRESHOLD 61 // 湿度阈值（61%）
+
+/**
+ * @brief 温湿度数据来源模式枚举
+ */
+typedef enum {
+    MODE_SENSOR = 0, // 使用传感器实际测量值
+    MODE_FIXED       // 使用固定值
+} TempHumiMode_t;
+
+/**
+ * @brief 温湿度值控制相关变量
+ */
+static TempHumiMode_t currentTempHumiMode = MODE_SENSOR; // 当前温湿度值来源模式
+static uint8_t fixed_temp_int = 0;   // 固定温度值的整数部分
+static uint8_t fixed_temp_deci = 0;  // 固定温度值的小数部分
+static uint8_t fixed_humi_int = 0;   // 固定湿度值的整数部分
+static uint8_t fixed_humi_deci = 0;  // 固定湿度值的小数部分
+
+/**
+ * @brief 系统运行时间和定时器变量（由Timer.c维护）
+ */
+extern uint32_t system_runtime_s;  // 系统运行秒数
+extern uint32_t ms_count;          // 毫秒计数器
+extern uint32_t uv_timer_ms;       // 红外触发UV灯计时器
+extern uint8_t uv_infrared_active; // 红外触发UV灯工作标志
+extern uint32_t cycle_timer_ms;    // 循环模式计时器
+extern uint8_t cycle_state;        // 循环模式状态
+extern uint8_t update_flag;        // 定时更新标志
+extern uint8_t RED_Flag;           // 红外检测标志
 
 /**
  * @brief 系统工作模式，默认为手动模式
@@ -24,7 +62,7 @@ SystemMode_t currentMode = MODE_MANUAL;
  * @brief 保存上次有效的传感器数据
  * @note  用于传感器读取失败时保持上次的有效数据
  */
-static SensorData_t last_valid_sensor_data = {0};
+SensorData_t last_valid_sensor_data = {0};
 
 // 存储上一次显示的值，用于比较是否需要更新
 static struct {
@@ -84,24 +122,30 @@ SensorData_t GetAllSensorData(void)
 
     // 获取DHT11数据
     if (DHT11_Read_TempAndHumidity(&DHT11_Data) == SUCCESS) {
+        // 读取成功，保存为有效数据
         data.dht11_status = 0;
-        data.humi_int     = DHT11_Data.humi_int;
-        data.humi_deci    = DHT11_Data.humi_deci;
-        data.temp_int     = DHT11_Data.temp_int;
-        data.temp_deci    = DHT11_Data.temp_deci;
-
-        // 保存有效数据
-        last_valid_sensor_data.humi_int  = data.humi_int;
-        last_valid_sensor_data.humi_deci = data.humi_deci;
-        last_valid_sensor_data.temp_int  = data.temp_int;
-        last_valid_sensor_data.temp_deci = data.temp_deci;
+        last_valid_sensor_data.humi_int  = DHT11_Data.humi_int;
+        last_valid_sensor_data.humi_deci = DHT11_Data.humi_deci;
+        last_valid_sensor_data.temp_int  = DHT11_Data.temp_int;
+        last_valid_sensor_data.temp_deci = DHT11_Data.temp_deci;
     } else {
+        // 读取失败
         data.dht11_status = 1;
-        // 读取失败时使用上次的有效数据
+    }
+
+    // 根据模式选择返回的温湿度值
+    if (currentTempHumiMode == MODE_SENSOR) {
+        // 使用传感器数据（成功时用新数据，失败时用上次有效数据）
         data.humi_int  = last_valid_sensor_data.humi_int;
         data.humi_deci = last_valid_sensor_data.humi_deci;
         data.temp_int  = last_valid_sensor_data.temp_int;
         data.temp_deci = last_valid_sensor_data.temp_deci;
+    } else {
+        // 使用固定值
+        data.humi_int  = fixed_humi_int;
+        data.humi_deci = fixed_humi_deci;
+        data.temp_int  = fixed_temp_int;
+        data.temp_deci = fixed_temp_deci;
     }
 
     // 获取SD12紫外线数据
@@ -154,7 +198,15 @@ KeyStatus_t HandleKeyPress(int currentKeyValue)
                     currentMode = MODE_AUTO;
                     break;
                 case MODE_AUTO:
+                    currentMode = MODE_CYCLE;
                     // 从自动模式切换出去时，关闭所有设备
+                    UV_OFF();
+                    Fan_OFF();
+                    Buzzer_OFF();
+                    Motor_SetSpeed(0);
+                    break;
+                case MODE_CYCLE:
+                    // 从循环模式切换出去时，关闭所有设备
                     UV_OFF();
                     Fan_OFF();
                     Buzzer_OFF();
@@ -168,6 +220,30 @@ KeyStatus_t HandleKeyPress(int currentKeyValue)
                     Fan_OFF();
                     Buzzer_OFF();
                     Motor_SetSpeed(0);
+                    break;
+            }
+            return status;
+        }
+
+        // 处理温湿度控制按键（在任何模式下都可用）
+        if (currentKeyValue >= 13 && currentKeyValue <= 15) {
+            switch (currentKeyValue) {
+                case 13: // 设置固定值1（温度32度，湿度62%）
+                    currentTempHumiMode = MODE_FIXED;
+                    fixed_temp_int = 32;
+                    fixed_temp_deci = 0;
+                    fixed_humi_int = 62;
+                    fixed_humi_deci = 0;
+                    break;
+                case 14: // 设置固定值2（温度25度，湿度40%）
+                    currentTempHumiMode = MODE_FIXED;
+                    fixed_temp_int = 25;
+                    fixed_temp_deci = 0;
+                    fixed_humi_int = 40;
+                    fixed_humi_deci = 0;
+                    break;
+                case 15: // 切换回传感器测量值
+                    currentTempHumiMode = MODE_SENSOR;
                     break;
             }
             return status;
@@ -216,9 +292,102 @@ KeyStatus_t HandleKeyPress(int currentKeyValue)
             }
         }
     }
-
-    // 返回按键状态
     return status;
+}
+
+/**
+ * @brief  处理系统主要任务
+ * @details 包含以下功能：
+ *         1. 按键输入和传感器数据的处理（100ms周期）
+ *         2. 自动模式和循环模式的控制逻辑
+ *         3. 蓝牙数据的处理
+ *         4. OLED显示的更新
+ * @param  无
+ * @return 无
+ */
+void ProcessSystemTasks(void)
+{
+    static uint32_t last_update_time = 0;
+    static BTStatus_t btStatus       = {0};    // 蓝牙状态
+    static KeyStatus_t keyStatus     = {0, 0}; // 按键状态
+
+        // 处理按键输入和传感器数据（100ms一次）
+        if (system_runtime_s * 1000 + ms_count - last_update_time >= 100) {
+            keyStatus               = HandleKeyPress(Key_GetNum());
+            // 获取当前有效的温湿度值（可能是传感器值或固定值）
+            SensorData_t sensorData = GetAllSensorData();
+
+            // 计算温湿度浮点数值（用于自动控制逻辑，使用当前有效值）
+            float humi = (float)sensorData.humi_int + (float)sensorData.humi_deci / 10.0;
+            float temp = (float)sensorData.temp_int + (float)sensorData.temp_deci / 10.0;
+
+            // 处理定时器更新的标志
+        if (update_flag) {
+            update_flag = 0; // 清除标志
+
+            // 自动模式逻辑
+            if (currentMode == MODE_AUTO) {
+                // 检查是否有红外触发
+                if (RED_Flag == 1) {
+                    uv_infrared_active = 1;
+                    uv_timer_ms        = 0;
+                    Servo_SetAngle(90);
+                    UV_ON();
+                    RED_Flag = 0;
+                }
+
+                // 检查UV灯定时关闭
+                if (uv_infrared_active && uv_timer_ms >= 2000) {
+                    uv_infrared_active = 0;
+                    UV_OFF();
+                    Servo_SetAngle(0);
+                }
+
+                // 温湿度控制
+                if (!uv_infrared_active) {
+                    if (temp > TEMP_THRESHOLD && humi > HUMI_THRESHOLD) {
+                        Fan_ON();
+                        UV_ON();
+                    } else {
+                        Fan_OFF();
+                        UV_OFF();
+                    }
+                }
+            }
+            // 循环模式逻辑
+            else if (currentMode == MODE_CYCLE) {
+                if (cycle_timer_ms < 5000) {
+                    if (cycle_state == 0) {
+                        Fan_ON();
+                        UV_ON();
+                        Motor_SetSpeed(20);
+                        cycle_state = 1;
+                    }
+                } else {
+                    if (cycle_state == 1) {
+                        Fan_OFF();
+                        UV_OFF();
+                        Motor_SetSpeed(0);
+                        cycle_state = 0;
+                    }
+                }
+            }
+        }
+
+        // 发送蓝牙数据包
+        BT_SendDataPacket(sensorData.redValue, sensorData.uvLevel, humi, temp);
+
+        // 处理蓝牙数据
+        btStatus = HandleBluetooth();
+
+        // 更新显示
+        OLED_UpdateDisplay(keyStatus.keyValue, sensorData.dht11_status,
+                           sensorData.humi_int, sensorData.humi_deci,
+                           sensorData.temp_int, sensorData.temp_deci,
+                           sensorData.uvLevel, sensorData.redValue, btStatus.status);
+
+        last_update_time = system_runtime_s * 1000 + ms_count;
+    }
 }
 
 /**
@@ -237,8 +406,8 @@ BTStatus_t HandleBluetooth(void)
 {
     BTStatus_t btStatus = {0}; // 初始化为0
 
-    if (BT_RxFlag == 1 && currentMode == MODE_BT) { // 只在蓝牙模式下处理数据包
-        BT_RxFlag       = 0;                        // 清除接收标志
+    if (BT_RxFlag == 1) {    // 始终接收并解析数据包
+        BT_RxFlag       = 0; // 清除接收标志
         btStatus.status = BT_ParsePacket();
 
         if (btStatus.status == 0) {
@@ -249,26 +418,62 @@ BTStatus_t HandleBluetooth(void)
             btStatus.motor_flag = (BT_Packet.flags >> 3) & 0x01;
             btStatus.mode_flag  = (BT_Packet.flags >> 4) & 0x01;
 
-            // 根据标志控制设备
-            if (btStatus.uv_flag)
-                LED_Sys_ON();
-            else
-                LED_Sys_OFF();
+            // 无论当前模式如何，都处理模式标志位
+            if (btStatus.mode_flag) {
+                // 在三种模式间循环切换：手动->自动->蓝牙->手动
+                switch (currentMode) {
+                    case MODE_MANUAL:
+                        currentMode = MODE_AUTO;
+                        break;
+                    case MODE_AUTO:
+                        currentMode = MODE_CYCLE;
+                        // 从自动模式切换出去时，关闭所有设备
+                        UV_OFF();
+                        Fan_OFF();
+                        Buzzer_OFF();
+                        Motor_SetSpeed(0);
+                        break;
+                    case MODE_CYCLE:
+                        // 从循环模式切换出去时，关闭所有设备
+                        UV_OFF();
+                        Fan_OFF();
+                        Buzzer_OFF();
+                        Motor_SetSpeed(0);
+                        currentMode = MODE_BT;
+                        break;
+                    case MODE_BT:
+                        currentMode = MODE_MANUAL;
+                        // 切换到手动模式时，关闭所有设备
+                        UV_OFF();
+                        Fan_OFF();
+                        Buzzer_OFF();
+                        Motor_SetSpeed(0);
+                        break;
+                }
+            }
 
-            if (btStatus.servo_flag)
-                Servo_SetAngle(90);
-            else
-                Servo_SetAngle(0);
+            // 只有在蓝牙模式下才处理设备控制
+            if (currentMode == MODE_BT) {
+                if (btStatus.uv_flag)
+                    UV_ON();
+                else
+                    UV_OFF();
 
-            if (btStatus.fan_flag)
-                Fan_ON();
-            else
-                Fan_OFF();
+                if (btStatus.servo_flag)
+                    Servo_SetAngle(90);
+                else
+                    Servo_SetAngle(0);
 
-            if (btStatus.motor_flag)
-                Motor_SetSpeed(50);
-            else
-                Motor_SetSpeed(0);
+                if (btStatus.fan_flag)
+                    Fan_ON();
+                else
+                    Fan_OFF();
+
+                if (btStatus.motor_flag)
+                    Motor_SetSpeed(50);
+                else
+                    Motor_SetSpeed(0);
+            }
         }
     }
 
@@ -305,23 +510,28 @@ void OLED_UpdateDisplay(int keyValue, uint8_t dht11_status,
     // 首次显示时初始化所有内容
     if (!last_display.initialized) {
         OLED_ShowString(1, 1, "K:");
+        OLED_ShowString(1, 5, "R:");
         OLED_ShowString(1, 8, "D:");
         OLED_ShowString(2, 1, "hm:");
         OLED_ShowString(3, 1, "T:");
         OLED_ShowString(3, 5, ".");
         OLED_ShowString(3, 7, "C UV:");
-        OLED_ShowString(4, 1, "R:");
-        OLED_ShowString(4, 4, "B:");
-        OLED_ShowString(4, 8, "M:");
+        OLED_ShowString(4, 1, "T:");
+        OLED_ShowString(4, 9, "B:");
+        OLED_ShowString(4, 12, "M:");
 
         last_display.initialized = 1;
     }
 
     // 更新按键值（如果改变）
     if (last_display.keyValue != keyValue) {
-        OLED_ShowNum(1, 3, keyValue, 2);
+        OLED_ShowNum(1, 3, keyValue, 2); // K:##
         last_display.keyValue = keyValue;
     }
+
+    // 更新红外值（强制每次更新）
+    OLED_ShowString(1, 7, redValue ? "Y" : "N"); // R:Y/N
+    last_display.redValue = redValue;
 
     // 更新DHT11状态（只在成功时显示OK，避免频繁闪烁）
     static uint8_t err_count = 0;
@@ -370,25 +580,42 @@ void OLED_UpdateDisplay(int keyValue, uint8_t dht11_status,
         last_display.uvLevel = uvLevel;
     }
 
-    // 更新红外值（如果改变）
-    if (last_display.redValue != redValue) {
-        OLED_ShowNum(4, 3, redValue, 1); // 只显示0或1
-        last_display.redValue = redValue;
+    // 更新第四行：运行时间、蓝牙状态和模式
+    static uint32_t last_runtime = 0xFFFFFFFF;
+    static uint8_t last_bt_rx    = 0;
+    static uint8_t last_mode     = 0xFF;
+
+    // 更新运行时间（如果改变）
+    if (last_runtime != system_runtime_s) {
+        OLED_ShowNum(4, 3, system_runtime_s, 4); // T:####
+        OLED_ShowString(4, 7, "s");              // s
+        last_runtime = system_runtime_s;
     }
 
     // 更新蓝牙状态（如果改变）
-    static uint8_t last_bt_rx = 0;
     if (BT_RxFlag == 1 && !last_bt_rx) {
-        OLED_ShowString(4, 6, "R"); // 显示接收标志
+        OLED_ShowString(4, 11, "R"); // 显示接收标志
     } else if (BT_RxFlag == 0 && last_bt_rx) {
-        OLED_ShowString(4, 6, " "); // 清除接收标志
+        OLED_ShowString(4, 11, " "); // 清除接收标志
     }
     last_bt_rx = BT_RxFlag;
 
     // 更新Mode标志（如果改变）
-    static uint8_t last_mode = 0xFF;
     if (last_mode != currentMode) {
-        OLED_ShowNum(4, 10, currentMode, 1);
+        switch (currentMode) {
+            case MODE_MANUAL:
+                OLED_ShowString(4, 14, "MN");
+                break;
+            case MODE_AUTO:
+                OLED_ShowString(4, 14, "AU");
+                break;
+            case MODE_CYCLE:
+                OLED_ShowString(4, 14, "CY");
+                break;
+            case MODE_BT:
+                OLED_ShowString(4, 14, "BT");
+                break;
+        }
         last_mode = currentMode;
     }
 }

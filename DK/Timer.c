@@ -1,13 +1,28 @@
 #include "stm32f10x.h" // Device header
 #include "dk_C8T6.h"
-#include "fan.h" // Include fan header
-#include "LED.h" // Assuming UV_ON/OFF is related to LED control, or include UV header if separate
+#include "fan.h"   // 风扇控制
+#include "LED.h"   // LED和紫外线灯控制
+#include "Servo.h" // 舵机控制
+
+// 系统运行时间计数器（全局可访问）
+uint32_t system_runtime_s = 0;
+
+// 温湿度阈值定义
+#define TEMP_THRESHOLD 31 // 温度阈值（31°C）
+#define HUMI_THRESHOLD 61 // 湿度阈值（61%）
+
+extern SensorData_t last_valid_sensor_data;
+extern uint8_t RED_Flag;
 
 uint32_t TimingDelay = 0;
 
-// 自动模式定时器相关变量
-static uint32_t auto_mode_timer_ms = 0;
-static uint8_t auto_mode_state     = 0; // 0: OFF, 1: ON
+// 定义全局变量供主循环访问
+uint32_t ms_count = 0;           // 毫秒计数器，用于更新运行时间
+uint32_t uv_timer_ms = 0;        // 红外触发UV灯计时器
+uint8_t uv_infrared_active = 0;  // 红外触发UV灯工作标志
+uint32_t cycle_timer_ms = 0;     // 循环模式计时器
+uint8_t cycle_state = 0;         // 循环模式状态
+uint8_t update_flag = 0;         // 定时更新标志，用于主循环中处理
 
 void Timer_Init(void)
 {
@@ -61,34 +76,32 @@ void TIM4_IRQHandler(void)
             TimingDelay--;
         }
 
+        // 更新系统运行时间
+        ms_count++;
+        if (ms_count >= 1000) {  // 每1000ms（1秒）
+            system_runtime_s++;   // 增加一秒
+            ms_count = 0;         // 重置毫秒计数器
+        }
+
         /*在此添加其他需要1ms定时执行的任务*/
 
-        // 自动模式控制逻辑
+        // 仅在中断中更新计时器和标志
         if (currentMode == MODE_AUTO) {
-            auto_mode_timer_ms++; // 1ms计数
-
-            if (auto_mode_timer_ms >= 15000) { // 15秒周期 (5秒工作 + 10秒间隔)
-                auto_mode_timer_ms = 0;
+            if (uv_infrared_active) {
+                uv_timer_ms++;
             }
-
-            if (auto_mode_timer_ms < 5000) { // 前5秒：开启风扇和紫外线灯
-                if (auto_mode_state == 0) {
-                    Fan_ON();
-                    UV_ON(); // Assuming UV_ON is defined elsewhere, possibly in LED.h or a separate UV.h
-                    auto_mode_state = 1;
-                }
-            } else { // 后10秒：关闭风扇和紫外线灯
-                if (auto_mode_state == 1) {
-                    Fan_OFF();
-                    UV_OFF(); // Assuming UV_OFF is defined elsewhere
-                    auto_mode_state = 0;
-                }
+            update_flag = 1;  // 设置更新标志
+        }
+        else if (currentMode == MODE_CYCLE) {
+            cycle_timer_ms++;
+            if (cycle_timer_ms >= 15000) {
+                cycle_timer_ms = 0;
             }
-        } else {
-            // 如果不在自动模式，重置自动模式定时器和状态
-            auto_mode_timer_ms = 0;
-            auto_mode_state    = 0;
-            // 退出自动模式时，DK_C8T6.c中的HandleKeyPress会关闭设备，这里不需要重复关闭
+            update_flag = 1;  // 设置更新标志
+        }
+        else {
+            uv_timer_ms = 0;
+            cycle_timer_ms = 0;
         }
 
         TIM_ClearITPendingBit(TIM4, TIM_IT_Update);

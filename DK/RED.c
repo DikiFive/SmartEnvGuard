@@ -49,7 +49,7 @@ void RED_Init(void)
     EXTI_InitStructure.EXTI_Line    = EXTI_Line7;           // 选择EXTI7线
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;               // 使能中断
     EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;  // 中断模式
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // 下降沿触发
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling; // 双边沿触发
     EXTI_Init(&EXTI_InitStructure);
 
     /*NVIC配置*/
@@ -79,8 +79,8 @@ uint8_t RED_Get(void)
  * @details 响应红外传感器的外部中断：
  *         1. 判断是否为EXTI7的中断
  *         2. 清除中断标志位
- *         3. 再次确认引脚电平（去抖）
- *         4. 更新检测标志
+ *         3. 延时一小段时间进行去抖
+ *         4. 根据当前引脚电平更新检测标志
  * @note   此函数会被硬件自动调用
  */
 void EXTI9_5_IRQHandler(void)
@@ -89,11 +89,7 @@ void EXTI9_5_IRQHandler(void)
         /*清除中断标志位*/
         EXTI_ClearITPendingBit(EXTI_Line7);
 
-        /*再次检查引脚状态，防止抖动*/
-        if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_7) == 0) {
-            RED_Flag = 1; // 检测到障碍物
-        } else {
-            RED_Flag = 0; // 未检测到障碍物
-        }
+        // 直接更新标志，消抖由定时器处理
+        RED_Flag = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_7) == 0) ? 1 : 0;
     }
 }

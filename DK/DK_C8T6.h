@@ -39,8 +39,9 @@
  */
 typedef enum {
     MODE_MANUAL = 0, /**< 手动模式：通过按键直接控制设备 */
-    MODE_AUTO   = 1, /**< 自动模式：系统自动控制设备 */
-    MODE_BT     = 2  /**< 蓝牙模式：通过蓝牙控制设备 */
+    MODE_AUTO   = 1, /**< 自动模式：系统自动控制设备（温湿度+红外） */
+    MODE_CYCLE  = 2, /**< 循环模式：15秒周期循环控制设备 */
+    MODE_BT     = 3  /**< 蓝牙模式：通过蓝牙控制设备 */
 } SystemMode_t;
 
 /**
@@ -124,5 +125,17 @@ void OLED_UpdateDisplay(int keyValue, uint8_t dht11_status,
                         uint8_t humi_int, uint8_t humi_deci,
                         uint8_t temp_int, uint8_t temp_deci,
                         uint8_t uvLevel, uint8_t redValue, int8_t bt_status);
+
+/**
+ * @brief  处理系统主要任务
+ * @details 包含以下功能：
+ *         1. 按键输入和传感器数据的处理（100ms周期）
+ *         2. 自动模式和循环模式的控制逻辑
+ *         3. 蓝牙数据的处理
+ *         4. OLED显示的更新
+ * @param  无
+ * @return 无
+ */
+void ProcessSystemTasks(void);
 
 #endif /* __DK_C8T6_H */
