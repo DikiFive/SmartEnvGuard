@@ -9,6 +9,6 @@ int main(void)
 
     while (1) {
         ProcessSystemTasks(); // 处理系统主要任务
-        Delay_ms(1);         // 短暂延时，避免CPU占用过高
+        Delay_ms(1);          // 短暂延时，避免CPU占用过高
     }
 }

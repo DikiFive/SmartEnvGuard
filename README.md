@@ -5,7 +5,7 @@
 基于STM32F103C8T6的智能环境监控系统，集成温湿度检测、紫外线感应、红外触发与多模式控制功能，支持蓝牙远程交互。
 作者：DikiFive（全平台同名）
 
-[English Document](README_EN.md) | [项目文档](docs/) | [演示视频](#)
+[演示视频](#演示视频)
 
 ## 目录
 - [核心功能](#核心功能)
@@ -90,6 +90,9 @@
     * 第2行：湿度值
     * 第3行：温度值和UV等级
     * 第4行：运行时间、蓝牙状态、工作模式
+## 演示视频
+暂无演示视频。
+
 ## 硬件架构 🧩
 
 ### 系统框图
@@ -156,7 +159,7 @@ graph TD
 - 可选：安装VSCode + Embedded IDE插件
 
 # 2. 获取代码
-git clone https://github.com/yourusername/SmartEnvGuard.git
+git clone https://github.com/<your-username>/SmartEnvGuard.git
 
 # 3. 导入工程
 - 打开Project/SmartEnvGuard.uvprojx
@@ -376,4 +379,28 @@ PB8/9  --> OLED显示屏
      * refactor: 代码重构
 
 ## 许可证 📜
-本项目采用MIT许可证，详见LICENSE文件。
+本项目采用MIT许可证。
+
+```
+MIT License
+
+Copyright (c) 2025 DikiFive
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
