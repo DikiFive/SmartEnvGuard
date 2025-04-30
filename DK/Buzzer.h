@@ -2,8 +2,8 @@
  * @file     Buzzer.h
  * @brief    蜂鸣器驱动程序头文件
  * @details  定义了蜂鸣器控制相关的宏和函数接口
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

@@ -2,8 +2,8 @@
  * @file     AD.c
  * @brief    STM32F10x ADC驱动程序
  * @details  实现了ADC的初始化和数据读取功能
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

@@ -5,8 +5,8 @@
  *          - 微秒级延时
  *          - 毫秒级延时
  *          - 秒级延时
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

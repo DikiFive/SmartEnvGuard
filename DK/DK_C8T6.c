@@ -12,8 +12,8 @@
  *          4. 按键处理
  *          5. 蓝牙通信
  *          6. OLED显示
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

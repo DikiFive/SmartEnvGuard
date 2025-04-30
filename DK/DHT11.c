@@ -7,8 +7,8 @@
  *          2. DHT11响应
  *          3. DHT11连续发送40位数据
  *          4. 数据校验
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

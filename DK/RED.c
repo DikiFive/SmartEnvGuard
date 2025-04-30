@@ -5,8 +5,8 @@
  *          - PA7引脚配置为上拉输入
  *          - 使用外部中断检测下降沿
  *          - 通过标志位反映检测状态
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

@@ -4,8 +4,8 @@
  * @details  定义了矩阵键盘相关的：
  *          - 硬件参数
  *          - 功能函数接口
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

@@ -4,8 +4,8 @@
  * @details  实现风扇的初始化和基本控制功能：
  *          - GPIO配置
  *          - 开关控制
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

@@ -2,8 +2,8 @@
  * @file     PWM.h
  * @brief    PWM驱动程序头文件
  * @details  声明PWM相关的控制函数接口
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

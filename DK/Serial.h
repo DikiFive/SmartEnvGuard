@@ -5,8 +5,8 @@
  *          - 初始化函数
  *          - 数据发送函数
  *          - printf重定向函数
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

@@ -6,8 +6,8 @@
  *          - 数据发送功能
  *          - 数据接收及解析功能
  *          - 状态监控及错误处理
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

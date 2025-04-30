@@ -4,8 +4,8 @@
  * @details  使用TIM3和TIM4实现PWM输出：
  *          - TIM3_CH1：用于直流电机速度控制
  *          - TIM4_CH3：用于舵机角度控制
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

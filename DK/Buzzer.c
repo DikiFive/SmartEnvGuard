@@ -4,8 +4,8 @@
  * @details  实现蜂鸣器的基本控制功能，包括：
  *          - 初始化
  *          - 开启/关闭控制
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

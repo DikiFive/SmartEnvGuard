@@ -7,8 +7,8 @@
  *          - 字符显示函数
  *          - 数字显示函数
  * @note     适用于0.96寸OLED显示屏（128x64分辨率）
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

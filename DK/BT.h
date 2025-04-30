@@ -2,8 +2,8 @@
  * @file     BT.h
  * @brief    蓝牙通信模块驱动程序头文件
  * @details  定义了蓝牙通信相关的数据结构、宏和函数接口
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

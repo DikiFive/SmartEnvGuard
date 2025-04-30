@@ -5,8 +5,8 @@
  *          - PWM调速
  *          - 正反转控制
  *          - 启停控制
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

@@ -2,8 +2,8 @@
  * @file     Motor.h
  * @brief    直流电机驱动程序头文件
  * @details  声明电机控制相关的函数接口
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

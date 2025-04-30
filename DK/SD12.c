@@ -4,8 +4,8 @@
  * @details  实现SD12紫外线强度检测功能：
  *          - ADC采样（PA0）
  *          - 紫外线强度分级（0-11级）
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

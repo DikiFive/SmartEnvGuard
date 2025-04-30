@@ -8,8 +8,8 @@
  *          - 显示清屏等基本功能
  * @note     OLED分辨率：128x64
  *          通信接口：I2C（SCL:PB8, SDA:PB9）
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

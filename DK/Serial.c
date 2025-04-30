@@ -5,8 +5,8 @@
  *          - USART1配置（PA9/PA10）
  *          - 数据收发
  *          - 中断接收
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 

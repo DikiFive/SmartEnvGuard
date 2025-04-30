@@ -5,8 +5,8 @@
  *          1. LED1/LED2：通用指示灯
  *          2. 系统LED：状态指示
  *          3. 紫外线灯：消毒功能
- * @author   [作者]
- * @date     [日期]
+ * @author   DikiFive
+ * @date     2025-04-30
  * @version  v1.0
  */
 
